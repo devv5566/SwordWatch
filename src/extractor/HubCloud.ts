@@ -14,7 +14,7 @@ export class HubCloud extends Extractor {
   public override readonly cacheVersion = 1;
 
   public supports(_ctx: Context, url: URL): boolean {
-    return null !== url.host.match(/hubcloud|pixelserver|fsl/i);
+    return null !== url.host.match(/hubcloud/);
   }
 
   protected async extractInternal(ctx: Context, url: URL, meta: Meta): Promise<InternalUrlResult[]> {
@@ -42,7 +42,6 @@ export class HubCloud extends Extractor {
           return {
             url,
             format: Format.unknown,
-            isExternal: true,
             label: `${this.label} (FSL)`,
             meta: {
               ...meta,
@@ -65,7 +64,6 @@ export class HubCloud extends Extractor {
           return {
             url,
             format: Format.unknown,
-            isExternal: true,
             label: `${this.label} (FSLv2)`,
             meta: {
               ...meta,
@@ -87,7 +85,6 @@ export class HubCloud extends Extractor {
           return {
             url,
             format: Format.unknown,
-            isExternal: true,
             label: `${this.label} (PixelServer)`,
             meta: {
               ...meta,
