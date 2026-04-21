@@ -10,9 +10,9 @@ import { ConfigureController, ExtractController, ManifestController, StreamContr
 import { BlockedError, logErrorAndReturnNiceString } from './error';
 import { createExtractors, ExtractorRegistry } from './extractor';
 import { createSources, Source } from './source';
-import { HomeCine } from './source/HomeCine';
-import { MeineCloud } from './source/MeineCloud';
-import { MostraGuarda } from './source/MostraGuarda';
+import { FourKHDHub } from './source/FourKHDHub';
+import { HDHub4u } from './source/HDHub4u';
+import { Showbox } from './source/Showbox';
 import { clearCache, contextFromRequestAndResponse, envGet, envIsProd, Fetcher, StreamResolver } from './utils';
 
 if (envIsProd()) {
@@ -90,20 +90,25 @@ const streamResolver = new StreamResolver(logger, extractorRegistry);
 addon.use('/', (new StreamController(logger, sources, streamResolver)).router);
 
 addon.post('/test-febbox-cookie', express.json(), async (req: Request, res: Response) => {
-  const { cookie } = req.body;
+  let cookie = req.body.cookie?.trim();
   if (!cookie) return res.status(400).json({ success: false, message: 'No cookie provided' });
+  if (!cookie.startsWith('ui=')) {
+    cookie = 'ui=' + cookie;
+  }
+  
   try {
-    const r = await fetch('https://febapi.nuvioapp.space/api/user/cards', {
-      headers: { cookie, 'User-Agent': 'DevStreamzAddon/1.0' }
+    const r = await fetch('https://febapi.nuvioapp.space/api/media/movie/533535/oss=USA7?cookie=' + encodeURIComponent(cookie), {
+      headers: { 'User-Agent': 'DevStreamzAddon/1.0' }
     });
     const data = await r.json() as any;
     if (data && data.success) {
-      return res.json({ success: true, message: `Success! Quota Remaining: ${data.data?.remaining_mb || 'Unknown'} MB` });
+      return res.json({ success: true, message: `Success! Cookie is valid and connected.` });
     } else {
       return res.json({ success: false, message: 'Invalid cookie or expired' });
     }
   } catch (e) {
-    return res.json({ success: false, message: 'Error validating cookie' });
+    console.error("Cookie validation error:", e);
+    return res.json({ success: false, message: 'Error validating cookie: ' + (e as Error).message });
   }
 });
 
@@ -131,9 +136,9 @@ addon.get('/live', async (req: Request, res: Response) => {
   const ctx = contextFromRequestAndResponse(req, res);
 
   const sources: Source[] = [
-    new HomeCine(fetcher),
-    new MeineCloud(fetcher),
-    new MostraGuarda(fetcher),
+    new FourKHDHub(fetcher),
+    new HDHub4u(fetcher),
+    new Showbox(fetcher),
   ];
   const hrefs = [
     ...sources.map(source => source.baseUrl),
