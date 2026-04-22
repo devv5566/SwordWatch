@@ -398,7 +398,7 @@ export function landingTemplate(manifest: CustomManifest) {
     <div class="card-title">🌍 Languages</div>
     ${configEnvDesc ? `<p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">${configEnvDesc}</p>` : ''}
     <div class="lang-grid">
-      ${formHTML.replace(/<form[^>]*>|<\/form>/g, '')}
+      ${formHTML}
     </div>
   </div>` : ''}
 
@@ -423,13 +423,30 @@ export function landingTemplate(manifest: CustomManifest) {
 </div>
 
 <script>
-  ${formFields.length ? script : ''}
+  (function() {
+    var installLink = document.getElementById('installLink');
+    var form = document.getElementById('mainForm');
 
-  if (typeof updateLink === 'function') {
+    function buildUrl() {
+      var base = 'stremio://' + window.location.host;
+      if (form) {
+        var config = {};
+        var data = new FormData(form);
+        data.forEach(function(val, key) { config[key] = val; });
+        if (Object.keys(config).length > 0) {
+          return base + '/' + encodeURIComponent(JSON.stringify(config)) + '/manifest.json';
+        }
+      }
+      return base + '/manifest.json';
+    }
+
+    function updateLink() {
+      installLink.href = buildUrl();
+    }
+
     updateLink();
-  } else {
-    installLink.href = 'stremio://' + window.location.host + '/manifest.json';
-  }
+    if (form) form.addEventListener('change', updateLink);
+  })();
 </script>
 </body>
 </html>`;
