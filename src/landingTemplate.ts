@@ -3,36 +3,16 @@ import { CustomManifest } from './types';
 import { envGet } from './utils';
 
 export function landingTemplate(manifest: CustomManifest) {
-  // Build config form options
+  const logoUrl = manifest.logo || '/2.png';
+
+  // Build config form — only language checkboxes remain
   let formFields = '';
   let script = '';
 
   if ((manifest.config || []).length) {
     manifest.config.forEach((elem) => {
       const key = elem.key;
-      if (key === 'febboxCookie') {
-        // Showbox cookie field only
-        const isRequired = elem.required ? ' required' : '';
-        formFields += `
-        <div class="field-group">
-          <label class="field-label" for="${key}">
-            <span class="field-icon">🍪</span> ${elem.title}
-          </label>
-          <div class="input-row">
-            <input type="password" id="${key}" name="${key}" class="field-input" placeholder="Paste your Febbox cookie here…"${isRequired}/>
-            <button type="button" id="testFebboxBtn" class="validate-btn">Validate</button>
-          </div>
-          <div id="febboxResult" class="field-hint"></div>
-        </div>`;
-      } else if (['text', 'number', 'password'].includes(elem.type)) {
-        const isRequired = elem.required ? ' required' : '';
-        const defaultHTML = elem.default ? ` value="${elem.default}"` : '';
-        formFields += `
-        <div class="field-group">
-          <label class="field-label" for="${key}">${elem.title}</label>
-          <input type="${elem.type}" id="${key}" name="${key}" class="field-input"${defaultHTML}${isRequired}/>
-        </div>`;
-      } else if (elem.type === 'checkbox') {
+      if (elem.type === 'checkbox') {
         const isChecked = elem.default === 'checked' ? ' checked' : '';
         formFields += `
         <div class="field-group checkbox-group">
@@ -41,65 +21,17 @@ export function landingTemplate(manifest: CustomManifest) {
             <span>${elem.title}</span>
           </label>
         </div>`;
-      } else if (elem.type === 'select') {
-        const defaultValue = elem.default || (elem.options || [])[0];
-        let opts = '';
-        (elem.options || []).forEach((el) => {
-          const isSel = el === defaultValue ? ' selected' : '';
-          opts += `<option value="${el}"${isSel}>${el}</option>`;
-        });
-        formFields += `
-        <div class="field-group">
-          <label class="field-label" for="${key}">${elem.title}</label>
-          <select id="${key}" name="${key}" class="field-input">${opts}</select>
-        </div>`;
       }
     });
 
     if (formFields.length) {
       script += `
-        installLink.onclick = () => mainForm.reportValidity();
+        installLink.onclick = () => true;
         const updateLink = () => {
           const config = Object.fromEntries(new FormData(mainForm));
-          if (config.mediaFlowProxyUrl) config.mediaFlowProxyUrl = config.mediaFlowProxyUrl.replace(/^https?:\\/\\//, '');
           installLink.href = 'stremio://' + window.location.host + '/' + encodeURIComponent(JSON.stringify(config)) + '/manifest.json';
         };
         mainForm.onchange = updateLink;
-
-        const testFebboxBtn = document.getElementById('testFebboxBtn');
-        if (testFebboxBtn) {
-          testFebboxBtn.onclick = async (e) => {
-            e.preventDefault();
-            const cookie = document.getElementById('febboxCookie').value;
-            const resultDiv = document.getElementById('febboxResult');
-            if (!cookie) {
-              resultDiv.className = 'field-hint error';
-              resultDiv.innerText = '⚠️ Please enter a cookie first';
-              return;
-            }
-            testFebboxBtn.innerText = 'Checking…';
-            try {
-              const res = await fetch('/test-febbox-cookie', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cookie })
-              });
-              const data = await res.json();
-              if (data.success) {
-                resultDiv.className = 'field-hint success';
-                resultDiv.innerText = '✅ ' + data.message;
-              } else {
-                resultDiv.className = 'field-hint error';
-                resultDiv.innerText = '❌ ' + (data.message || 'Validation failed');
-              }
-            } catch {
-              resultDiv.className = 'field-hint error';
-              resultDiv.innerText = '❌ Network error';
-            } finally {
-              testFebboxBtn.innerText = 'Validate';
-            }
-          };
-        }
       `;
     }
   }
@@ -118,7 +50,9 @@ export function landingTemplate(manifest: CustomManifest) {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>WatchNow – Stremio Add-on</title>
   <meta name="description" content="WatchNow Stremio Add-on – stream Movies &amp; Series in 4K, 1080p and more. Powered by DevStreams."/>
-  <link rel="icon" href="/2.png" type="image/png"/>
+  <link rel="icon" type="image/png" href="${logoUrl}"/>
+  <link rel="apple-touch-icon" href="${logoUrl}"/>
+  <link rel="shortcut icon" href="${logoUrl}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
@@ -145,7 +79,6 @@ export function landingTemplate(manifest: CustomManifest) {
       line-height: 1.6;
     }
 
-    /* animated gradient background */
     body::before {
       content: '';
       position: fixed;
@@ -165,7 +98,6 @@ export function landingTemplate(manifest: CustomManifest) {
       flex-direction: column;
       align-items: center;
       padding: 48px 20px 80px;
-      gap: 0;
     }
 
     /* ── hero ── */
@@ -174,7 +106,7 @@ export function landingTemplate(manifest: CustomManifest) {
       flex-direction: column;
       align-items: center;
       gap: 16px;
-      margin-bottom: 48px;
+      margin-bottom: 40px;
       text-align: center;
     }
 
@@ -236,7 +168,7 @@ export function landingTemplate(manifest: CustomManifest) {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 28px 28px;
+      padding: 28px;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       margin-bottom: 20px;
@@ -255,11 +187,7 @@ export function landingTemplate(manifest: CustomManifest) {
     }
 
     /* ── features ── */
-    .features {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .features { display: flex; flex-direction: column; gap: 12px; }
 
     .feature-item {
       display: flex;
@@ -267,11 +195,7 @@ export function landingTemplate(manifest: CustomManifest) {
       gap: 12px;
     }
 
-    .feature-icon {
-      font-size: 1.25rem;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
+    .feature-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
 
     .feature-text strong {
       display: block;
@@ -280,12 +204,9 @@ export function landingTemplate(manifest: CustomManifest) {
       color: var(--text);
     }
 
-    .feature-text span {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
+    .feature-text span { font-size: 0.8rem; color: var(--muted); }
 
-    /* ── stream format preview ── */
+    /* ── stream preview ── */
     .stream-preview {
       background: rgba(0,0,0,0.4);
       border: 1px solid var(--border);
@@ -293,88 +214,39 @@ export function landingTemplate(manifest: CustomManifest) {
       padding: 14px 16px;
       font-size: 0.82rem;
       line-height: 1.75;
-      font-family: 'Inter', monospace;
       color: #c7d7ff;
     }
 
-    .stream-preview .sp-name {
-      font-weight: 700;
-      color: var(--blue-light);
+    .sp-name { font-weight: 700; color: var(--blue-light); }
+
+    /* ── language grid ── */
+    .lang-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
     }
-
-    /* ── form ── */
-    .field-group {
-      margin-bottom: 18px;
-    }
-
-    .field-group:last-child { margin-bottom: 0; }
-
-    .field-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .field-icon { font-size: 1rem; }
-
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .field-input {
-      width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: var(--text);
-      font-size: 0.88rem;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .field-input:focus {
-      border-color: var(--blue);
-    }
-
-    .validate-btn {
-      flex-shrink: 0;
-      background: rgba(37,99,235,0.2);
-      border: 1px solid var(--blue);
-      border-radius: 10px;
-      padding: 10px 16px;
-      color: var(--blue-light);
-      font-size: 0.82rem;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-
-    .validate-btn:hover { background: rgba(37,99,235,0.35); }
-
-    .field-hint {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 6px;
-      min-height: 18px;
-    }
-
-    .field-hint.success { color: #34d399; }
-    .field-hint.error   { color: #f87171; }
 
     .checkbox-label {
       display: flex;
       align-items: center;
       gap: 10px;
       font-size: 0.88rem;
+      cursor: pointer;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .checkbox-label:hover {
+      background: rgba(37,99,235,0.08);
+      border-color: rgba(37,99,235,0.25);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      accent-color: var(--blue);
+      width: 16px;
+      height: 16px;
       cursor: pointer;
     }
 
@@ -414,15 +286,31 @@ export function landingTemplate(manifest: CustomManifest) {
 
     .install-btn:active { transform: scale(0.98); }
 
+    .btn-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    /* ── divider ── */
+    .divider {
+      width: 100%;
+      max-width: 520px;
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0 20px;
+    }
+
     /* ── powered by ── */
     .powered-by {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      margin-top: 12px;
       color: var(--muted);
       font-size: 0.78rem;
+      text-align: center;
     }
 
     .powered-by a {
@@ -433,14 +321,6 @@ export function landingTemplate(manifest: CustomManifest) {
     }
 
     .powered-by a:hover { color: #fff; }
-
-    .divider {
-      width: 100%;
-      max-width: 520px;
-      height: 1px;
-      background: var(--border);
-      margin: 4px 0 20px;
-    }
   </style>
 </head>
 <body>
@@ -448,7 +328,7 @@ export function landingTemplate(manifest: CustomManifest) {
 
   <!-- HERO -->
   <div class="hero">
-    <img src="/2.png" alt="WatchNow Logo" class="hero-logo"/>
+    <img src="${logoUrl}" alt="WatchNow Logo" class="hero-logo"/>
     <h1 class="hero-title">WatchNow</h1>
     <p class="hero-sub">A premium Stremio add-on delivering Movies &amp; Series streams with rich quality metadata.</p>
     <div class="badge-row">
@@ -468,21 +348,14 @@ export function landingTemplate(manifest: CustomManifest) {
         <span class="feature-icon">🎥</span>
         <div class="feature-text">
           <strong>Multi-source Streaming</strong>
-          <span>Pulls streams from 4KHDHub, HDHub4u, and Showbox (Febbox) simultaneously.</span>
+          <span>Pulls streams from 4KHDHub, HDHub4u, and Showbox simultaneously.</span>
         </div>
       </div>
       <div class="feature-item">
         <span class="feature-icon">📊</span>
         <div class="feature-text">
           <strong>Rich Stream Metadata</strong>
-          <span>Every stream shows quality, codec, audio format, file size, bitrate, and language flags.</span>
-        </div>
-      </div>
-      <div class="feature-item">
-        <span class="feature-icon">🍪</span>
-        <div class="feature-text">
-          <strong>Showbox Support</strong>
-          <span>Add your Febbox cookie below to unlock Showbox streams (optional).</span>
+          <span>Every stream shows quality, codec, audio format, file size, bitrate &amp; language flags.</span>
         </div>
       </div>
       <div class="feature-item">
@@ -490,6 +363,13 @@ export function landingTemplate(manifest: CustomManifest) {
         <div class="feature-text">
           <strong>Smart Caching</strong>
           <span>Results are cached for 12 hours so repeated lookups are instant.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">🌍</span>
+        <div class="feature-text">
+          <strong>Multi-language Support</strong>
+          <span>Enable specific language tracks below before installing.</span>
         </div>
       </div>
     </div>
@@ -501,7 +381,7 @@ export function landingTemplate(manifest: CustomManifest) {
     <div class="stream-preview">
       <span class="sp-name">WatchNow</span><br/>
       <span class="sp-name">🔥 4K UHD</span><br/>
-      ──────────────────<br/>
+      ──────────────────────<br/>
       🎥 BluRay 📺 DV 🎞️ HEVC<br/>
       🎧 Atmos | TrueHD 🔊 7.1 🗣️ 🇬🇧 / 🇮🇳<br/>
       📦 62.5 GB / 📊 54.8 Mbps<br/>
@@ -511,11 +391,13 @@ export function landingTemplate(manifest: CustomManifest) {
   </div>
 
   ${formHTML ? `
-  <!-- CONFIG FORM -->
+  <!-- LANGUAGE CONFIG -->
   <div class="card">
-    <div class="card-title">⚙️ Configuration</div>
+    <div class="card-title">🌍 Languages</div>
     ${configEnvDesc ? `<p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">${configEnvDesc}</p>` : ''}
-    ${formHTML}
+    <div class="lang-grid">
+      ${formHTML.replace(/<form[^>]*>|<\/form>/g, '')}
+    </div>
   </div>` : ''}
 
   <div class="divider"></div>
@@ -524,7 +406,7 @@ export function landingTemplate(manifest: CustomManifest) {
   <div class="install-btn-wrap">
     <a id="installLink" class="install-link" href="#">
       <button class="install-btn" name="Install">
-        <img src="/1.png" alt="" style="width:22px;height:22px;border-radius:6px;object-fit:cover;"/>
+        <img src="${logoUrl}" alt="" class="btn-logo"/>
         Add to Stremio
       </button>
     </a>
@@ -533,7 +415,7 @@ export function landingTemplate(manifest: CustomManifest) {
   <!-- POWERED BY -->
   <div class="powered-by">
     <span>Powered by <a href="https://dev-streamz-navy.vercel.app/configure" target="_blank" rel="noopener">DevStreams</a></span>
-    <span>v${manifest.version || '0.0.0'} &nbsp;·&nbsp; <a href="https://github.com/devv5566/SwordWatch" target="_blank" rel="noopener">GitHub</a></span>
+    <span>v${manifest.version || '1.14.0'}</span>
   </div>
 
 </div>
