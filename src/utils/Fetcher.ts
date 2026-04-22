@@ -51,9 +51,9 @@ export type CustomRequestConfig = AxiosRequestConfig & {
 };
 
 export class Fetcher {
-  private readonly DEFAULT_TIMEOUT = 10000;
+  private readonly DEFAULT_TIMEOUT = 30000; // increased from 10s to 30s to accommodate slower sources like Showbox
   private readonly DEFAULT_QUEUE_LIMIT = 50;
-  private readonly DEFAULT_QUEUE_TIMEOUT = 10000;
+  private readonly DEFAULT_QUEUE_TIMEOUT = 20000; // increased queue timeout to 20s
   private readonly DEFAULT_TIMEOUTS_COUNT_THROW = 30;
   private readonly TIMEOUT_CACHE_TTL = 60 * 60 * 1000; // 1h
   private readonly FLARESOLVERR_CACHE_TTL = 15 * 60 * 1000; // 15m
