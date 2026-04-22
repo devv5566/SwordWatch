@@ -6,7 +6,7 @@ import { logErrorAndReturnNiceString } from '../error';
 import { ExtractorRegistry } from '../extractor';
 import { Source } from '../source';
 import { Context, CountryCode, Format, UrlResult } from '../types';
-import { isResolutionExcluded, showErrors, showExternalUrls } from './config';
+import { isResolutionExcluded, showErrors } from './config';
 import { envGetAppName } from './env';
 import { Id } from './id';
 import { flagFromCountryCode } from './language';
@@ -197,23 +197,21 @@ export class StreamResolver {
     return { externalUrl: urlResult.url.href };
   };
 
-  private buildName(ctx: Context, urlResult: UrlResult): string {
-    let name = envGetAppName();
+  private buildName(_ctx: Context, urlResult: UrlResult): string {
+    const rawTitle = urlResult.meta?.title ?? '';
+    const height = urlResult.meta?.height;
 
-    urlResult.meta?.countryCodes?.forEach((countryCode) => {
-      name += ` ${flagFromCountryCode(countryCode)}`;
-    });
+    // Quality emoji matching buildTitle logic
+    let qualityBadge: string;
+    if ((height && height >= 2160) || /2160|4k|uhd/i.test(rawTitle)) qualityBadge = '🔥 4K UHD';
+    else if ((height && height >= 1080) || /1080/i.test(rawTitle)) qualityBadge = '💎 1080p';
+    else if ((height && height >= 720) || /720/i.test(rawTitle)) qualityBadge = '🎞️ 720p';
+    else if ((height && height >= 480) || /480/i.test(rawTitle)) qualityBadge = '📽️ 480p';
+    else qualityBadge = '▶️ HD';
 
-    if (urlResult.meta?.height) {
-      name += ` ${getClosestResolution(urlResult.meta.height)}`;
-    }
-
-    if (urlResult.isExternal && showExternalUrls(ctx.config)) {
-      name += ` ⚠️ external`;
-    }
-
-    return name;
+    return `WatchNow\n${qualityBadge}`;
   };
+
 
   private buildTitle(ctx: Context, urlResult: UrlResult): string {
     const rawTitle = urlResult.meta?.title ?? '';

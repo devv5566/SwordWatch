@@ -82,6 +82,8 @@ addon.use((req: Request, res: Response, next: NextFunction) => {
 
 const extractorRegistry = new ExtractorRegistry(logger, extractors);
 
+addon.use(express.static('src'));
+
 addon.use('/', (new ExtractController(logger, fetcher, extractorRegistry)).router);
 addon.use('/', (new ConfigureController(sources, extractors)).router);
 addon.use('/', (new ManifestController(sources, extractors)).router);

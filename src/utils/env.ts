@@ -13,7 +13,7 @@ export const envGetRequired = (name: string): string => {
 
 export const envGetAppId = (): string => process.env['MANIFEST_ID'] || 'swordwatch';
 
-export const envGetAppName = (): string => process.env['MANIFEST_NAME'] || 'SwordWatch';
+export const envGetAppName = (): string => process.env['MANIFEST_NAME'] || 'WatchNow';
 
 export const envIsProd = (): boolean => process.env['NODE_ENV'] === 'production';
 
