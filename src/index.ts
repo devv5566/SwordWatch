@@ -123,14 +123,55 @@ addon.post('/track-install', (_req: Request, res: Response) => {
 addon.get('/admin/stats', (req: Request, res: Response) => {
   const adminKey = envGet('ADMIN_KEY') || 'watchnow-secret-2024';
   if (req.query['key'] !== adminKey) {
-    return res.status(403).json({ error: 'Forbidden' });
+    res.status(403).send(`<!DOCTYPE html><html><head><title>403</title>
+    <style>body{background:#060b18;color:#f0f4ff;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;gap:12px;}
+    h1{font-size:3rem;color:#ef4444;}p{color:rgba(240,244,255,0.5);}</style></head>
+    <body><h1>403</h1><p>Invalid or missing key.</p></body></html>`);
+    return;
   }
   const stats = readStats();
-  return res.json({
-    totalInstalls: stats.installs,
-    lastInstall: stats.lastInstall,
-    note: 'Count increments each time someone clicks Add to Stremio',
-  });
+  const lastStr = stats.lastInstall
+    ? new Date(stats.lastInstall).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST'
+    : 'Never';
+  const logoB64 = LOGO_BLUE;
+  res.setHeader('content-type', 'text/html');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>WatchNow — Install Stats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--blue:#2563EB;--blue-light:#3B82F6;--bg:#060b18;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--text:#f0f4ff;--muted:rgba(240,244,255,0.5);}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:24px;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(37,99,235,0.2) 0%,transparent 60%);pointer-events:none;}
+    .logo{width:64px;height:64px;border-radius:16px;border:2px solid var(--blue);box-shadow:0 0 24px rgba(37,99,235,0.4);}
+    h1{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#fff 30%,var(--blue-light) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .subtitle{font-size:0.8rem;color:var(--muted);}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 40px;text-align:center;backdrop-filter:blur(12px);min-width:280px;}
+    .count{font-size:5rem;font-weight:800;color:var(--blue-light);line-height:1;margin-bottom:8px;}
+    .label{font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+    .meta{margin-top:20px;font-size:0.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:16px;}
+    .meta span{color:var(--text);}
+    .refresh{margin-top:8px;font-size:0.72rem;color:var(--muted);}
+    .refresh a{color:var(--blue-light);text-decoration:none;}
+  </style>
+  <meta http-equiv="refresh" content="30"/>
+</head>
+<body>
+  <img src="${logoB64}" class="logo" alt="WatchNow"/>
+  <h1>WatchNow — Install Stats</h1>
+  <p class="subtitle">Private dashboard · auto-refreshes every 30s</p>
+  <div class="card">
+    <div class="count">${stats.installs}</div>
+    <div class="label">Total Install Clicks</div>
+    <div class="meta">Last click: <span>${lastStr}</span></div>
+  </div>
+  <p class="refresh">Auto-refreshing · <a href="?key=${adminKey}">Refresh now</a></p>
+</body>
+</html>`);
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
