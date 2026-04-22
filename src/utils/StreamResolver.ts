@@ -216,28 +216,103 @@ export class StreamResolver {
   };
 
   private buildTitle(ctx: Context, urlResult: UrlResult): string {
-    const titleLines = [];
+    const rawTitle = urlResult.meta?.title ?? '';
+    const titleLower = rawTitle.toLowerCase();
 
-    if (urlResult.meta?.title) {
-      titleLines.push(urlResult.meta.title);
-    }
+    // ── Quality / resolution ─────────────────────────────────────────
+    const height = urlResult.meta?.height;
+    const qualityLine = (() => {
+      if ((height && height >= 2160) || /2160|4k|uhd/i.test(rawTitle)) return '🔥4K UHD';
+      if ((height && height >= 1080) || /1080/i.test(rawTitle)) return '💎1080p FHD';
+      if ((height && height >= 720) || /720/i.test(rawTitle)) return '🎞️720p HD';
+      if ((height && height >= 480) || /480/i.test(rawTitle)) return '📽️480p SD';
+      if (rawTitle) return '📽️ HD';
+      return '📽️ Stream';
+    })();
 
-    const titleDetailsLine = [];
-    if (urlResult.meta?.bytes) {
-      titleDetailsLine.push(`💾 ${bytes.format(urlResult.meta.bytes, { unitSeparator: ' ' })}`);
-    }
+    // ── Source / encoding line ────────────────────────────────────────
+    const source = /blu[-\s]?ray|bdrip|bdremux/i.test(rawTitle) ? 'BluRay'
+      : /web[-\s]?dl/i.test(rawTitle) ? 'WEB-DL'
+      : /webrip/i.test(rawTitle) ? 'WEBRip'
+      : /hdtv/i.test(rawTitle) ? 'HDTV'
+      : /dvdrip/i.test(rawTitle) ? 'DVDRip'
+      : 'WEB';
+
+    const hdr = /\bdv\b|dolby[-\s]?vision/i.test(rawTitle) ? ' 📺 DV'
+      : /hdr10\+/i.test(rawTitle) ? ' 📺 HDR10+'
+      : /\bhdr\b/i.test(rawTitle) ? ' 📺 HDR'
+      : '';
+
+    const codec = /hevc|x265|h\.?265/i.test(rawTitle) ? ' 🎞️ HEVC'
+      : /avc|x264|h\.?264/i.test(rawTitle) ? ' 🎞️ AVC'
+      : /av1/i.test(rawTitle) ? ' 🎞️ AV1'
+      : '';
+
+    const encodingLine = `🎥 ${source}${hdr}${codec}`;
+
+    // ── Audio line ────────────────────────────────────────────────────
+    const audioParts: string[] = [];
+    if (/atmos/i.test(rawTitle)) audioParts.push('Atmos');
+    if (/truehd/i.test(rawTitle)) audioParts.push('TrueHD');
+    if (/dts[-\s]?hd/i.test(rawTitle)) audioParts.push('DTS-HD');
+    if (/\bdts\b/i.test(rawTitle) && !/dts[-\s]?hd/i.test(rawTitle)) audioParts.push('DTS');
+    if (/dd\+|eac3|e-ac-3/i.test(rawTitle)) audioParts.push('DD+');
+    if (/\baac\b/i.test(rawTitle)) audioParts.push('AAC');
+    const channels = /7\.1/i.test(rawTitle) ? ' 🔊 7.1' : /5\.1/i.test(rawTitle) ? ' 🔊 5.1' : '';
+    const audioStr = audioParts.length
+      ? `🎧 ${audioParts.join(' | ')}${channels}`
+      : channels ? `🎧 ${channels.trim()}` : '';
+
+    // ── Language flags ────────────────────────────────────────────────
+    const flagMap: Record<string, string> = {
+      multi: '🌍', en: '🇬🇧', hi: '🇮🇳', ta: '🇮🇳', te: '🇮🇳', ml: '🇮🇳',
+      it: '🇮🇹', fr: '🇫🇷', de: '🇩🇪', es: '🇪🇸', pt: '🇵🇹', ru: '🇷🇺',
+      zh: '🇨🇳', ja: '🇯🇵', ko: '🇰🇷', ar: '🇸🇦', tr: '🇹🇷',
+    };
+    const langFlags = urlResult.meta?.countryCodes
+      ?.filter(cc => cc !== 'multi' as CountryCode)
+      .map(cc => flagMap[cc] ?? flagFromCountryCode(cc))
+      .filter(Boolean)
+      .join(' / ');
+    const langLine = langFlags ? `🗣️ ${langFlags}` : '';
+
+    // ── Audio + lang on same line ─────────────────────────────────────
+    const audioLangLine = [audioStr, langLine].filter(Boolean).join(' ');
+
+    // ── Size / bitrate ────────────────────────────────────────────────
+    const bytesVal = urlResult.meta?.bytes;
+    const sizeStr = bytesVal ? `📦 ${bytes.format(bytesVal, { unitSeparator: ' ' })}` : '';
+    const bitrateMatch = rawTitle.match(/(\d+(?:\.\d+)?)\s*Mbps/i);
+    const bitrateStr = bitrateMatch ? `📊 ${bitrateMatch[1]} Mbps` : '';
+    const sizeLine = [sizeStr, bitrateStr].filter(Boolean).join(' / ');
+
+    // ── Release group / indexer ───────────────────────────────────────
+    const groupMatch = rawTitle.match(/-([A-Z0-9]{2,})\s*$/i);
+    const group = groupMatch ? `🏷️ ${groupMatch[1]!.toUpperCase()}` : '';
+    const indexerMatch = titleLower.match(/\b(yts|rarbg|torrentio|eztv|1337x)\b/);
+    const indexer = indexerMatch ? `📡 ${indexerMatch[1]!.toUpperCase()}` : '';
+    const groupLine = [group, indexer].filter(Boolean).join(' ');
+
+    // ── Source label (extractor / addon label) ────────────────────────
     const sourceLabel = urlResult.meta?.sourceLabel;
-    if (sourceLabel && sourceLabel !== urlResult.label) {
-      titleDetailsLine.push(`🔗 ${urlResult.label} from ${urlResult.meta?.sourceLabel}`);
-    } else {
-      titleDetailsLine.push(`🔗 ${urlResult.label}`);
-    }
-    titleLines.push(titleDetailsLine.join(' '));
+    const extractorLabel = urlResult.label;
+    const sourceTagLine = sourceLabel && sourceLabel !== extractorLabel
+      ? `🔍 ${extractorLabel} from ${sourceLabel}`
+      : `🔍 ${extractorLabel}`;
 
-    if (urlResult.error) {
-      titleLines.push(logErrorAndReturnNiceString(ctx, this.logger, urlResult.meta?.sourceId ?? '', urlResult.error));
-    }
+    // ── Error ─────────────────────────────────────────────────────────
+    const errorLine = urlResult.error
+      ? logErrorAndReturnNiceString(ctx, this.logger, urlResult.meta?.sourceId ?? '', urlResult.error)
+      : '';
 
-    return titleLines.join('\n');
+    return [
+      qualityLine,
+      encodingLine,
+      audioLangLine,
+      sizeLine,
+      groupLine,
+      sourceTagLine,
+      errorLine,
+    ].filter(Boolean).join('\n');
   };
 }
