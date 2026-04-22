@@ -324,42 +324,67 @@ export function landingTemplate(manifest: CustomManifest) {
 
     .powered-by a:hover { color: #fff; }
 
-    /* ── left sidebar tab ── */
-    .side-tab {
+    /* ── bottom-left DevStreamz card ── */
+    .devs-card {
       position: fixed;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%) rotate(-90deg);
-      transform-origin: left center;
+      bottom: 20px;
+      left: 20px;
       z-index: 100;
-      background: var(--blue);
-      color: #fff;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      text-decoration: none;
-      padding: 8px 18px;
-      border-radius: 0 0 10px 10px;
-      box-shadow: 2px 2px 12px var(--blue-glow);
-      white-space: nowrap;
-      transition: background 0.2s, box-shadow 0.2s;
-      margin-left: -1px;
+      background: rgba(37,99,235,0.12);
+      border: 1px solid rgba(37,99,235,0.45);
+      border-radius: 14px;
+      padding: 12px 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      max-width: 220px;
+      box-shadow: 0 4px 24px rgba(37,99,235,0.2);
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
     }
 
-    .side-tab:hover {
-      background: var(--blue-light);
-      box-shadow: 2px 2px 20px rgba(59,130,246,0.5);
+    .devs-card:hover {
+      background: rgba(37,99,235,0.22);
+      box-shadow: 0 6px 32px rgba(37,99,235,0.35);
+      transform: translateY(-2px);
+    }
+
+    .devs-card-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--blue-light);
+      margin-bottom: 4px;
+    }
+
+    .devs-card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      display: block;
+    }
+
+    .devs-card-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 480px) {
+      .devs-card { display: none; }
     }
   </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- LEFT SIDE TAB -->
-  <a href="https://dev-streamz-navy.vercel.app/configure" target="_blank" rel="noopener" class="side-tab"
-     title="More Addons by DevStreamz">More Addons by DevStreamz</a>
+  <!-- BOTTOM-LEFT DEVSTREAMZ CARD -->
+  <a href="https://dev-streamz-navy.vercel.app/configure" target="_blank" rel="noopener" class="devs-card">
+    <div class="devs-card-label">🔗 By DevStreamz</div>
+    <span class="devs-card-title">More Addons →</span>
+    <div class="devs-card-sub">Add both our addons for the best streaming experience.</div>
+  </a>
 
   <!-- HERO -->
   <div class="hero">
